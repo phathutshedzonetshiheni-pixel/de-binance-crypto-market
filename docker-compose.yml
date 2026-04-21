@@ -1,6 +1,6 @@
 # Usage (from repo root):
 #   cp .env.example .env  (fill GCP_* , PUBSUB_* , etc.)
-#   Save your GCP service account JSON as docker/service-account.json (see docker/README.txt).
+#   Save your GCP service account JSON as docker/service-account.json (see docker/README.md).
 #   The whole docker/ folder is mounted read-only; avoid naming the key file sa.json (easy to
 #   create as a folder on Windows by mistake).
 #   docker compose build
