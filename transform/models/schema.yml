@@ -1,0 +1,96 @@
+version: 2
+
+models:
+  - name: stg_raw_batch_ohlc
+    columns:
+      - name: symbol_interval_open_key
+        tests:
+          - not_null
+          - unique
+      - name: symbol
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+      - name: candle_interval
+        tests:
+          - not_null
+      - name: open_ts
+        tests:
+          - not_null
+      - name: close_ts
+        tests:
+          - not_null
+      - name: ingest_ts
+        tests:
+          - not_null
+      - name: volume
+        tests:
+          - not_null
+  - name: stg_raw_stream_trades
+    columns:
+      - name: symbol_trade_key
+        tests:
+          - not_null
+          - unique
+      - name: symbol
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+      - name: trade_id
+        tests:
+          - not_null
+      - name: event_ts
+        tests:
+          - not_null
+      - name: ingest_ts
+        tests:
+          - not_null
+      - name: qty
+        tests:
+          - not_null
+  - name: mart_volume_distribution_daily
+    columns:
+      - name: trade_date_symbol_key
+        tests:
+          - not_null
+          - unique
+      - name: trade_date
+        tests:
+          - not_null
+      - name: symbol
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+      - name: total_volume
+        tests:
+          - not_null
+      - name: market_total_volume
+        tests:
+          - not_null
+      - name: volume_share
+        tests:
+          - not_null
+  - name: mart_price_volatility_hourly
+    columns:
+      - name: symbol_event_hour_key
+        tests:
+          - not_null
+          - unique
+      - name: symbol
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+      - name: event_hour
+        tests:
+          - not_null
+      - name: avg_price
+        tests:
+          - not_null

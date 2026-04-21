@@ -1,0 +1,68 @@
+# --- Environment / secrets ---
+.env
+.env.local
+.env.*.local
+
+# Keep shareable examples
+!.env.example
+
+# GCP keys and Docker credential paths (never commit real keys)
+docker/service-account.json
+docker/sa.json
+
+# Submission: dashboard/screenshots/*.png are tracked on purpose (rubric evidence).
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# --- dbt ---
+transform/target/
+transform/logs/
+transform/dbt_packages/
+transform/profiles.yml
+transform/.user.yml
+
+# --- Terraform ---
+infra/terraform/.terraform/
+infra/terraform/.terraform.lock.hcl
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/crash.log
+infra/terraform/crash.*.log
+infra/terraform/terraform.tfvars
+infra/terraform/terraform.tfvars.json
+infra/terraform/override.tf
+infra/terraform/override.tf.json
+infra/terraform/*_override.tf
+infra/terraform/*_override.tf.json
+infra/terraform/tfplan
+
+# --- IDE / OS ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# --- Cursor / local assistant artifacts ---
+assets/
+agent-transcripts/
+
+# --- Local docs (not pushed) ---
+docs/
+
+# --- Local Windows helper scripts (entire folder excluded from GitHub) ---
+scripts/windows/

@@ -1,0 +1,67 @@
+# Usage (from repo root):
+#   cp .env.example .env  (fill GCP_* , PUBSUB_* , etc.)
+#   Save your GCP service account JSON as docker/service-account.json (see docker/README.txt).
+#   The whole docker/ folder is mounted read-only; avoid naming the key file sa.json (easy to
+#   create as a folder on Windows by mistake).
+#   docker compose build
+#
+# Examples:
+#   docker compose --profile ci run --rm test
+#   docker compose --profile batch run --rm batch
+#   docker compose --profile stream up
+#   docker compose --profile dbt run --rm dbt
+#
+# Credentials in container: default GOOGLE_APPLICATION_CREDENTIALS=/run/gcp/service-account.json
+# If your key is nested (e.g. docker/sa.json/your-key.json), set in .env:
+#   GCP_CREDENTIALS_CONTAINER_PATH=/run/gcp/sa.json/your-key.json
+
+x-gcp-service-account: &gcp_service_account
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    GOOGLE_APPLICATION_CREDENTIALS: ${GCP_CREDENTIALS_CONTAINER_PATH:-/run/gcp/service-account.json}
+  volumes:
+    - ./docker:/run/gcp:ro
+
+services:
+  batch:
+    <<: *gcp_service_account
+    image: crypto-de-pipeline:latest
+    build: .
+    command: ["python", "ingestion/batch/binance_batch_ingest.py"]
+    profiles:
+      - batch
+
+  stream-producer:
+    <<: *gcp_service_account
+    image: crypto-de-pipeline:latest
+    build: .
+    command: ["python", "ingestion/stream/binance_ws_producer.py"]
+    restart: unless-stopped
+    profiles:
+      - stream
+
+  stream-consumer:
+    <<: *gcp_service_account
+    image: crypto-de-pipeline:latest
+    build: .
+    command: ["python", "ingestion/stream/pubsub_to_bq_consumer.py"]
+    restart: unless-stopped
+    profiles:
+      - stream
+
+  dbt:
+    <<: *gcp_service_account
+    image: crypto-de-pipeline:latest
+    build: .
+    command: ["dbt", "run", "--project-dir", "transform", "--profiles-dir", "transform"]
+    profiles:
+      - dbt
+
+  test:
+    image: crypto-de-pipeline:latest
+    build: .
+    command: ["pytest", "-q"]
+    profiles:
+      - ci

@@ -1,0 +1,43 @@
+.git
+.github
+.venv
+venv
+env
+__pycache__
+*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov/
+
+# dbt build artifacts (rebuilt in container if needed)
+transform/target
+transform/logs
+transform/dbt_packages
+
+# Never bake local SA keys into the image (bind-mount at runtime only)
+docker/service-account.json
+docker/sa.json
+
+# Terraform / local secrets
+infra/terraform/.terraform
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/terraform.tfvars
+.env
+.env.*
+
+# IDE / OS
+.idea
+.vscode
+.DS_Store
+Thumbs.db
+
+# Docs and assets not needed at runtime
+docs
+dashboard
+submission-docs
+assets
+agent-transcripts
+*.md
