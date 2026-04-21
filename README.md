@@ -29,27 +29,27 @@ The business questions addressed include:
 ```mermaid
 flowchart LR
     subgraph Sources
-        A[Binance REST API (Historical klines)]
-        E[Binance WebSocket (Live trades)]
+        A["Binance REST API (Historical klines)"]
+        E["Binance WebSocket (Live trades)"]
     end
 
     subgraph Ingestion
-        B[Batch ingestion (Python)]
-        F[Stream producer (Python)]
-        H[Stream consumer (Python)]
+        B["Batch ingestion (Python)"]
+        F["Stream producer (Python)"]
+        H["Stream consumer (Python)"]
     end
 
     subgraph Storage_and_Warehouse
-        C[GCS lake raw/batch]
-        D[BigQuery raw_batch_ohlc]
-        I[BigQuery raw_stream_trades]
-        G[Pub/Sub crypto-trades-topic]
+        C["GCS lake raw/batch"]
+        D["BigQuery raw_batch_ohlc"]
+        I["BigQuery raw_stream_trades"]
+        G["Pub/Sub crypto-trades-topic"]
     end
 
     subgraph Transform_and_Serve
-        J[dbt staging]
-        K[dbt marts]
-        L[Looker Studio Dashboard]
+        J["dbt staging"]
+        K["dbt marts"]
+        L["Looker Studio dashboard"]
     end
 
     A --> B
