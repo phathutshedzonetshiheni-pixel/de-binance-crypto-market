@@ -71,6 +71,12 @@ flowchart LR
 
 Implementation paths for each component are listed in the repository structure below.
 
+## Architecture (Detailed Visual)
+
+The Mermaid architecture above is the canonical text diagram. This detailed visual is included for quick reviewer orientation.
+
+![Detailed architecture overview](dashboard/screenshots/binance-architecture-pipeline.png)
+
 ## Repository Structure
 
 ### Folder Descriptions
@@ -201,6 +207,26 @@ erDiagram
     STG_RAW_STREAM_TRADES ||--o{ MART_PRICE_VOLATILITY_HOURLY : aggregates_to
 ```
 
+## Dashboard Quick View
+
+### Full Dashboard Snapshot
+
+![Dashboard full snapshot](dashboard/screenshots/tile-dashboard-volume-share-and-price-trend.png)
+
+Crypto market insights from this view:
+- SOLUSDT dominates volume share over the selected window, indicating concentration in traded activity.
+- ETHUSDT contributes a meaningful secondary share, while BTCUSDT volume share is comparatively small in this sampled period.
+- KPI cards surface practical monitoring signals quickly: peak volatility, peak hourly return, top price level, and top volume share.
+
+### Trend-Focused Snapshot
+
+![Dashboard trend snapshot](dashboard/screenshots/tile-average-price-trend-by-hour.png)
+
+Crypto market insights from this view:
+- Volatility varies by symbol across hours, which helps spot riskier intervals for intraday execution.
+- Average price trajectories diverge across symbols, showing different momentum profiles in the same window.
+- Date and symbol controls support focused comparison (single-symbol drilldown or full-market relative behavior).
+
 ## Evaluation Rubric Mapping
 
 - **Problem description**
@@ -273,6 +299,7 @@ cd de-end-to-end-proj
    - Manual checkpoint (credentials required): valid GCP auth and project-level permissions.
 2. **Run batch ingestion**
    - Back in repo root: `make run-batch`
+   - Optional broader history: set `BATCH_LOOKBACK_DAYS` (for example `7` or `30`) in `.env` before running.
    - Confirm batch outputs land in configured lake/warehouse targets.
 3. **Run stream pipeline in separate terminals**
    - Terminal A: `make run-stream-producer`
@@ -285,7 +312,7 @@ cd de-end-to-end-proj
 5. **Open dashboard artifacts**
    - Dashboard guide: `dashboard/README.md`
    - Evidence folder: `dashboard/screenshots/`
-   - Manual checkpoint (review artifact): add shareable dashboard URL + screenshots.
+   - Manual checkpoint (review artifact): validate KPI scorecards, symbol comparison visuals, and trend charts for the selected date window.
 
 ## Command Reference
 
@@ -293,6 +320,7 @@ cd de-end-to-end-proj
 - Lint: `make lint`
 - Tests: `make test`
 - Batch ingest: `make run-batch`
+  - Optional env window controls: `BATCH_LOOKBACK_DAYS` and `BATCH_LOOKBACK_HOURS`
 - Stream producer: `make run-stream-producer`
 - Stream consumer: `make run-stream-consumer`
 - dbt run: `make dbt-run`
@@ -316,7 +344,7 @@ GitHub Actions workflow: `.github/workflows/ci.yml`
 - Dashboard evidence folder: `dashboard/screenshots/`
 - Manual/blocked for reviewer package:
   - Looker Studio: [dashboard link](#links) (also in `dashboard/README.md`).
-  - Final dashboard screenshots in `dashboard/screenshots/`.
+  - Final dashboard screenshots in `dashboard/screenshots/` (KPI cards, symbol comparison panel, and trend panels).
   - Credentialed BigQuery-backed `dbt deps`/`dbt test` run proof (requires GCP secrets/credentials).
 
 ## Supporting Docs

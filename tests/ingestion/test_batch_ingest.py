@@ -9,6 +9,8 @@ from ingestion.batch.binance_batch_ingest import (
     build_gcs_object_name,
     build_kline_params,
     fetch_klines,
+    fetch_klines_for_time_range,
+    interval_to_milliseconds,
     load_to_bigquery_raw_table,
     normalize_kline,
     run_batch_pipeline,
@@ -118,6 +120,44 @@ def test_fetch_klines_retries_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> 
 
     assert result == expected_payload
     assert calls["count"] == 3
+
+
+def test_interval_to_milliseconds_returns_expected_values() -> None:
+    assert interval_to_milliseconds("1m") == 60_000
+    assert interval_to_milliseconds("1h") == 3_600_000
+
+
+def test_interval_to_milliseconds_raises_for_unsupported_interval() -> None:
+    with pytest.raises(ValueError, match="Unsupported BATCH_INTERVAL"):
+        interval_to_milliseconds("13m")
+
+
+def test_fetch_klines_for_time_range_paginates_windows(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[int, int]] = []
+    first_page = [[index * 60_000, "1", "2", "0.5", "1.5", "100", (index * 60_000) + 59_999] for index in range(1000)]
+    second_page = [[60_000_000, "1.1", "2.2", "0.6", "1.6", "110", 60_059_999]]
+
+    def fake_fetch_klines(**kwargs):  # type: ignore[no-untyped-def]
+        calls.append((kwargs["start_time_ms"], kwargs["end_time_ms"]))
+        if kwargs["start_time_ms"] == 0:
+            return first_page
+        if kwargs["start_time_ms"] == 60_000_000:
+            return second_page
+        return []
+
+    monkeypatch.setattr("ingestion.batch.binance_batch_ingest.fetch_klines", fake_fetch_klines)
+
+    result = fetch_klines_for_time_range(
+        symbol="BTCUSDT",
+        interval="1m",
+        start_time_ms=0,
+        end_time_ms=60_059_999,
+    )
+
+    assert result == first_page + second_page
+    assert calls == [(0, 59_999_999), (60_000_000, 60_059_999)]
 
 
 def test_load_to_bigquery_raw_table_retries_then_succeeds(

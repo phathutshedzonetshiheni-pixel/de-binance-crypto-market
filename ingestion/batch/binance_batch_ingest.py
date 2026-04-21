@@ -16,6 +16,22 @@ from ingestion.gcp_credentials import ensure_service_account_file_exists_if_conf
 
 LOGGER = logging.getLogger(__name__)
 BINANCE_KLINES_ENDPOINT = "https://api.binance.com/api/v3/klines"
+KLINE_API_MAX_LIMIT = 1000
+MINUTE_MS = 60 * 1000
+SUPPORTED_INTERVAL_MS = {
+    "1m": 1 * MINUTE_MS,
+    "3m": 3 * MINUTE_MS,
+    "5m": 5 * MINUTE_MS,
+    "15m": 15 * MINUTE_MS,
+    "30m": 30 * MINUTE_MS,
+    "1h": 60 * MINUTE_MS,
+    "2h": 2 * 60 * MINUTE_MS,
+    "4h": 4 * 60 * MINUTE_MS,
+    "6h": 6 * 60 * MINUTE_MS,
+    "8h": 8 * 60 * MINUTE_MS,
+    "12h": 12 * 60 * MINUTE_MS,
+    "1d": 24 * 60 * MINUTE_MS,
+}
 
 
 def normalize_kline(
@@ -50,7 +66,7 @@ def build_kline_params(
     interval: str,
     start_time_ms: int,
     end_time_ms: int,
-    limit: int = 1000,
+    limit: int = KLINE_API_MAX_LIMIT,
 ) -> dict[str, Any]:
     """Build standard Binance klines query parameters."""
     return {
@@ -68,11 +84,12 @@ def fetch_klines(
     start_time_ms: int,
     end_time_ms: int,
     *,
+    limit: int = KLINE_API_MAX_LIMIT,
     timeout_seconds: int = 20,
     max_retries: int = 3,
 ) -> list[list[Any]]:
     """Fetch klines with bounded retries for transient failures."""
-    params = build_kline_params(symbol, interval, start_time_ms, end_time_ms)
+    params = build_kline_params(symbol, interval, start_time_ms, end_time_ms, limit=limit)
 
     for attempt in range(1, max_retries + 1):
         try:
@@ -99,6 +116,57 @@ def fetch_klines(
             time.sleep(backoff_seconds)
 
     return []
+
+
+def interval_to_milliseconds(interval: str) -> int:
+    """Convert Binance interval string to milliseconds."""
+    interval_value = interval.strip().lower()
+    interval_ms = SUPPORTED_INTERVAL_MS.get(interval_value)
+    if interval_ms is None:
+        raise ValueError(f"Unsupported BATCH_INTERVAL '{interval}'.")
+    return interval_ms
+
+
+def fetch_klines_for_time_range(
+    symbol: str,
+    interval: str,
+    start_time_ms: int,
+    end_time_ms: int,
+    *,
+    timeout_seconds: int = 20,
+    max_retries: int = 3,
+) -> list[list[Any]]:
+    """Fetch full kline history for a time window using paginated API calls."""
+    interval_ms = interval_to_milliseconds(interval)
+    chunk_span_ms = interval_ms * KLINE_API_MAX_LIMIT
+    all_klines: list[list[Any]] = []
+    current_start_ms = int(start_time_ms)
+    upper_end_ms = int(end_time_ms)
+
+    while current_start_ms <= upper_end_ms:
+        chunk_end_ms = min(current_start_ms + chunk_span_ms - 1, upper_end_ms)
+        klines = fetch_klines(
+            symbol=symbol,
+            interval=interval,
+            start_time_ms=current_start_ms,
+            end_time_ms=chunk_end_ms,
+            limit=KLINE_API_MAX_LIMIT,
+            timeout_seconds=timeout_seconds,
+            max_retries=max_retries,
+        )
+        if not klines:
+            break
+        all_klines.extend(klines)
+        last_open_time_ms = int(klines[-1][0])
+        next_start_ms = last_open_time_ms + interval_ms
+        if next_start_ms <= current_start_ms:
+            break
+        current_start_ms = next_start_ms
+        if len(klines) < KLINE_API_MAX_LIMIT:
+            # No more data returned in this range.
+            break
+
+    return all_klines
 
 
 def rows_to_records(
@@ -160,7 +228,7 @@ def run_batch_extract_transform(
     max_retries: int = 3,
 ) -> tuple[list[dict[str, Any]], str]:
     """Run fetch -> normalize path and return records plus object name."""
-    klines = fetch_klines(
+    klines = fetch_klines_for_time_range(
         symbol=symbol,
         interval=interval,
         start_time_ms=start_time_ms,
@@ -316,8 +384,13 @@ def main() -> None:
     interval = os.getenv("BATCH_INTERVAL", "1m").strip()
     if not interval:
         raise ValueError("BATCH_INTERVAL must be non-empty when set")
+    lookback_days = float(os.getenv("BATCH_LOOKBACK_DAYS", "0").strip() or "0")
+    lookback_hours = float(os.getenv("BATCH_LOOKBACK_HOURS", "1").strip() or "1")
+    if lookback_days <= 0 and lookback_hours <= 0:
+        raise ValueError("Set BATCH_LOOKBACK_DAYS or BATCH_LOOKBACK_HOURS to a value > 0")
+    lookback_ms = int((lookback_days * 24 + lookback_hours) * 60 * 60 * 1000)
     end_ms = int(time.time() * 1000)
-    start_ms = end_ms - (60 * 60 * 1000)
+    start_ms = end_ms - lookback_ms
     bucket_name = os.getenv("GCS_BUCKET")
     project_id = os.getenv("GCP_PROJECT_ID")
     table_id = os.getenv("BQ_RAW_TABLE")
@@ -341,6 +414,11 @@ def main() -> None:
         return
 
     LOGGER.info("Dry run only. Set RUN_BATCH_PIPELINE=1 + cloud env vars to execute writes.")
+    LOGGER.info(
+        "Using lookback window: %.2f days (%.2f hours)",
+        lookback_days if lookback_days > 0 else lookback_hours / 24,
+        lookback_hours if lookback_days <= 0 else lookback_days * 24 + lookback_hours,
+    )
     for symbol in symbols:
         records, object_name = run_batch_extract_transform(
             symbol=symbol,
