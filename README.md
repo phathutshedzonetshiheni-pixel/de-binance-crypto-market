@@ -4,7 +4,7 @@ End-to-end data engineering project for crypto market analytics using batch + st
 
 ## Links
 
-- **Looker Studio dashboard:** [de-binance-crypto-report](https://datastudio.google.com/s/l1stovzDJKI) (same link as `dashboard/README.md`)
+- **Looker Studio dashboard:** [de-binance-crypto-report](https://datastudio.google.com/reporting/0dfef084-7d0a-4f63-badf-b9978a9179e6) (same link as `dashboard/README.md`)
 
 ## Problem Description
 

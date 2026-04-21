@@ -42,4 +42,4 @@ Saved under `dashboard/screenshots/` for peer review and the rubric.
 
 ## Dashboard URL
 
-- [de-binance-crypto-report](https://datastudio.google.com/s/l1stovzDJKI)
+- [de-binance-crypto-report](https://datastudio.google.com/reporting/0dfef084-7d0a-4f63-badf-b9978a9179e6)
