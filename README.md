@@ -2,6 +2,10 @@
 
 End-to-end data engineering project for crypto market analytics using batch + stream ingestion, BigQuery, dbt, and a dashboard deliverable.
 
+## Links
+
+- **Looker Studio dashboard:** [de-binance-crypto-report](https://datastudio.google.com/s/l1stovzDJKI) (same link as `dashboard/README.md`)
+
 ## Problem Description
 
 Crypto market data is high-volume, event-driven, and changes continuously. Analysts and operators need a reliable way to:
@@ -311,7 +315,7 @@ GitHub Actions workflow: `.github/workflows/ci.yml`
 - Dashboard implementation guide: `dashboard/README.md`
 - Dashboard evidence folder: `dashboard/screenshots/`
 - Manual/blocked for reviewer package:
-  - Looker Studio share URL (not in repo by design).
+  - Looker Studio: [dashboard link](#links) (also in `dashboard/README.md`).
   - Final dashboard screenshots in `dashboard/screenshots/`.
   - Credentialed BigQuery-backed `dbt deps`/`dbt test` run proof (requires GCP secrets/credentials).
 
